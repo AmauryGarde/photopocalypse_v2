@@ -18,7 +18,6 @@ import json_log_formatter
 
 app = FastAPI()
 
-
 # Custom JSON Formatter for structured logging
 class CustomJsonFormatter(json_log_formatter.JSONFormatter):
     def json_record(self, message, extra, record):
@@ -26,7 +25,6 @@ class CustomJsonFormatter(json_log_formatter.JSONFormatter):
         if record.exc_info:
             extra['exc_info'] = self.formatException(record.exc_info)
         return extra
-
 
 # Configure logging
 formatter = CustomJsonFormatter()
@@ -49,12 +47,10 @@ sharpening_model = hub.load(sharpening_model_path)
 # Cache for storing images
 image_cache = LRUCache(maxsize=100)
 
-
 @app.get("/")
 def read_root():
     logger.info("Root endpoint called")
     return {"Hello": "World"}
-
 
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
@@ -74,20 +70,25 @@ async def upload_image(file: UploadFile = File(...)):
     headers = {"Classification": Classification}
     return StreamingResponse(io.BytesIO(contents), media_type=file.content_type, headers=headers)
 
-
 @app.post("/upscale-images/")
 async def upscale_images():
-    filename, contents = next(iter(image_cache.items()))
-    preprocessed_image = preprocessor.preprocess_image(contents)
-    sharpened_image = prediction.predict_upscaled(preprocessed_image, sharpening_model)
-    postprocessed_image = postprep.postprep_sharpening(sharpened_image)
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+        for index, (filename, contents) in enumerate(image_cache.items()):
+            preprocessed_image = preprocessor.preprocess_image(contents)
+            sharpened_image = prediction.predict_upscaled(preprocessed_image, sharpening_model)
+            postprocessed_image = postprep.postprep_sharpening(sharpened_image)
 
-    headers = {
-        "Content-Disposition": f"attachment; filename={filename}"
-    }
+            # Assume postprocessed_image is a NumPy array
+            _, buffer = cv2.imencode('.jpg', postprocessed_image)  # Encoding the image as JPEG
+            image_byte_string = buffer.tobytes()  # Convert to bytes
 
-    return StreamingResponse(io.BytesIO(postprocessed_image), media_type="image/jpeg", headers=headers)
+            # Writing the image to the zip file
+            zip_file.writestr(f'image_{index}.jpg', image_byte_string)
 
+    zip_buffer.seek(0)
+    logger.info(f"Upscaled {len(image_cache)} images", extra={'cache_size': len(image_cache)})
+    return StreamingResponse(zip_buffer, media_type='application/zip')
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

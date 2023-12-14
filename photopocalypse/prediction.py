@@ -1,11 +1,18 @@
 from keras.models import load_model
-import os
-import numpy as np  # linear algebra
-import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
+import tensorflow as tf
+import time
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import cv2
 import os
+import logging
+import logging
 
-# gcloud test
+
+# Set up logging
+logging.basicConfig(filename='prediction.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
+
+
 
 def predict_blurr_percentage(image, model):
     """
@@ -36,4 +43,23 @@ def predict_blurr_percentage(image, model):
         classification = "blurry"
     else:
         classification = "not blurry"
+
+    # Log the classification
+    logging.info(f"Classification: {classification}")
+
     return f"This picture is {classification}. Bluriness: {prediction[0][0]:.2f} Sharpness: {prediction[0][1]:.2f}"
+
+
+def predict_upscaled(image,model):
+    """
+    Predicts the blur percentage of an image.
+
+    Args:
+        image (numpy.ndarray): The input image.
+
+    Returns:
+        image (numpy.ndarray): The output image.
+    """
+    upscaled_image = model(image)
+    upscaled_image = tf.squeeze(upscaled_image)
+    return upscaled_image

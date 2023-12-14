@@ -5,10 +5,10 @@ run-api:
 
 # Variables
 GCP_REGION := europe-west1
-REPO_NAME := phurge
-GCP_PROJECT := bootcamp-23
+REPO_NAME := photopocalypse-registry
+GCP_PROJECT := test-photo-sorter
 IMAGE_NAME := $(GCP_REGION)-docker.pkg.dev/$(GCP_PROJECT)/$(REPO_NAME)/$(REPO_NAME)
-MEMORY_SIZE := 8Gi
+MEMORY_SIZE := 4Gi
 
 .PHONY: build-prod build-intel tag-intel push-intel deploy
 
