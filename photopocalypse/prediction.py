@@ -1,9 +1,11 @@
 from keras.models import load_model
 import os
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np  # linear algebra
+import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import cv2
 import os
+
+# gcloud test
 
 def predict_blurr_percentage(image, model):
     """
